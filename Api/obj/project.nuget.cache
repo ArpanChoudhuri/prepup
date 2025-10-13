@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Sg0wk9UU3Dg=",
+  "dgSpecHash": "qia5BRzT898=",
   "success": true,
-  "projectFilePath": "C:\\Users\\arpan\\prepup\\Api\\Api.csproj",
+  "projectFilePath": "C:\\Users\\arpan\\prepup\\api\\Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\arpan\\.nuget\\packages\\microsoft.aspnetcore.diagnostics.healthchecks\\2.2.0\\microsoft.aspnetcore.diagnostics.healthchecks.2.2.0.nupkg.sha512",
     "C:\\Users\\arpan\\.nuget\\packages\\microsoft.aspnetcore.http.abstractions\\2.2.0\\microsoft.aspnetcore.http.abstractions.2.2.0.nupkg.sha512",

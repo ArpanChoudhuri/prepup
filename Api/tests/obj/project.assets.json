@@ -2717,8 +2717,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Users\\arpan\\prepup\\Api\\Api.csproj": {
-              "projectPath": "C:\\Users\\arpan\\prepup\\Api\\Api.csproj"
+            "C:\\Users\\arpan\\prepup\\api\\Api.csproj": {
+              "projectPath": "C:\\Users\\arpan\\prepup\\api\\Api.csproj"
             }
           }
         }

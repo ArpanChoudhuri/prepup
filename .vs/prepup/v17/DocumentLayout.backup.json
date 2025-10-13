@@ -3,12 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\arpan\\prepup\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B13A47D1-317C-418C-B5C3-699E9C2AC8EE}|Api\\Api.csproj|c:\\users\\arpan\\prepup\\api\\api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{B13A47D1-317C-418C-B5C3-699E9C2AC8EE}|Api\\Api.csproj|solutionrelative:api\\api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\arpan\\prepup\\Api\\obj\\Debug\\net8.0\\Api.AssemblyInfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Api\\obj\\Debug\\net8.0\\Api.AssemblyInfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B13A47D1-317C-418C-B5C3-699E9C2AC8EE}|Api\\Api.csproj|c:\\users\\arpan\\prepup\\api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B13A47D1-317C-418C-B5C3-699E9C2AC8EE}|Api\\Api.csproj|solutionrelative:api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\arpan\\prepup\\Api\\obj\\Debug\\net8.0\\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -21,10 +17,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{B13A47D1-317C-418C-B5C3-699E9C2AC8EE}|Api\\Api.csproj|c:\\users\\arpan\\prepup\\api\\tests\\obj\\debug\\net9.0\\api.tests.globalusings.g.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B13A47D1-317C-418C-B5C3-699E9C2AC8EE}|Api\\Api.csproj|solutionrelative:api\\tests\\obj\\debug\\net9.0\\api.tests.globalusings.g.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B13A47D1-317C-418C-B5C3-699E9C2AC8EE}|Api\\Api.csproj|c:\\users\\arpan\\prepup\\api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B13A47D1-317C-418C-B5C3-699E9C2AC8EE}|Api\\Api.csproj|solutionrelative:api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -34,24 +26,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Api",
-              "DocumentMoniker": "C:\\Users\\arpan\\prepup\\Api\\Api.csproj",
-              "RelativeDocumentMoniker": "Api\\Api.csproj",
-              "ToolTip": "C:\\Users\\arpan\\prepup\\Api\\Api.csproj",
-              "RelativeToolTip": "Api\\Api.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAA2AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-10-13T17:13:54.834Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": ".NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
               "DocumentMoniker": "C:\\Users\\arpan\\prepup\\Api\\obj\\Debug\\net8.0\\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
               "RelativeDocumentMoniker": "Api\\obj\\Debug\\net8.0\\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
@@ -64,7 +43,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "UnitTest1.cs",
               "DocumentMoniker": "C:\\Users\\arpan\\prepup\\Api\\tests\\UnitTest1.cs",
               "RelativeDocumentMoniker": "Api\\tests\\UnitTest1.cs",
@@ -77,7 +56,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 3,
               "Title": "Api.Tests.GlobalUsings.g.cs",
               "DocumentMoniker": "C:\\Users\\arpan\\prepup\\Api\\tests\\obj\\Debug\\net9.0\\Api.Tests.GlobalUsings.g.cs",
               "RelativeDocumentMoniker": "Api\\tests\\obj\\Debug\\net9.0\\Api.Tests.GlobalUsings.g.cs",
@@ -90,26 +69,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Api.AssemblyInfo.cs",
-              "DocumentMoniker": "C:\\Users\\arpan\\prepup\\Api\\obj\\Debug\\net8.0\\Api.AssemblyInfo.cs",
-              "RelativeDocumentMoniker": "Api\\obj\\Debug\\net8.0\\Api.AssemblyInfo.cs",
-              "ToolTip": "C:\\Users\\arpan\\prepup\\Api\\obj\\Debug\\net8.0\\Api.AssemblyInfo.cs",
-              "RelativeToolTip": "Api\\obj\\Debug\\net8.0\\Api.AssemblyInfo.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-13T17:11:05.704Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\arpan\\prepup\\Api\\Program.cs",
               "RelativeDocumentMoniker": "Api\\Program.cs",
               "ToolTip": "C:\\Users\\arpan\\prepup\\Api\\Program.cs",
               "RelativeToolTip": "Api\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAiwCsAAAAiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-10-13T16:48:32.089Z",
               "EditorCaption": ""
