@@ -1,0 +1,7 @@
+C:\Users\arpan\prepup\api\tests\bin\Debug\net9.0\.msCoverageSourceRootsMapping_Api.Tests
+C:\Users\arpan\prepup\api\tests\bin\Debug\net9.0\CoverletSourceRootsMapping_Api.Tests
+C:\Users\arpan\prepup\api\tests\obj\Debug\net9.0\Api.Tests.csproj.AssemblyReference.cache
+C:\Users\arpan\prepup\api\tests\obj\Debug\net9.0\Api.Tests.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\arpan\prepup\api\tests\obj\Debug\net9.0\Api.Tests.AssemblyInfoInputs.cache
+C:\Users\arpan\prepup\api\tests\obj\Debug\net9.0\Api.Tests.AssemblyInfo.cs
+C:\Users\arpan\prepup\api\tests\obj\Debug\net9.0\Api.Tests.csproj.CoreCompileInputs.cache
