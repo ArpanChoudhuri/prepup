@@ -9,7 +9,7 @@ jobs:
         with: { dotnet-version: '8.0.x' }
       - run: dotnet restore
       - run: dotnet build --configuration Release --no-restore
-      - run: dotnet test --no-build --verbosity normal
+      - run: dotnet test --configuration Release --no-build --verbosity normal
   web:
     runs-on: ubuntu-latest
     steps:
