@@ -127,6 +127,14 @@ yarn-error.log
 dist/
 build/
 
+**/bin/
+**/obj/
+
+# Angular
+web/node_modules/
+web/dist/
+web/.angular/
+
 # GitHub Copilot / cache / artifacts
 .gitconfig.local
 *.generated.cs
