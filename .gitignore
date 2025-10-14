@@ -1,0 +1,12 @@
+﻿.vs/
+[Bb]in/
+[Oo]bj/
+TestResults/
+out/
+artifacts/
+publish/
+
+# Angular (under web/)
+web/node_modules/
+web/dist/
+web/.angular/
