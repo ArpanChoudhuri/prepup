@@ -1,3 +1,17 @@
+.vs/
+[Bb]in/
+[Oo]bj/
+TestResults/
+out/
+artifacts/
+publish/
+
+# web (Angular)
+web/node_modules/
+web/dist/
+web/.angular/
+
+
 # ---- Solution / IDE ----
 .vs/
 .vscode/
