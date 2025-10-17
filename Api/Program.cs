@@ -88,7 +88,7 @@ app.MapPost("/auth/token", (TokenRequest req) =>
     var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
         issuer: jwt["Issuer"],
         audience: jwt["Audience"],
-        claims: new[] { new System.Security.Claims.Claim("sub", req.User ?? "demo") },
+        claims: new[] { new System.Security.Claims.Claim("sub", req.User ?? "demo", req.Password ?? "demo") },
         expires: DateTime.UtcNow.AddMinutes(10),
         signingCredentials: creds
     );
