@@ -12,6 +12,7 @@
 
     <!-- Neutralize any weird setting coming from parent Directory.Build.* -->
     <UseAttributeForTargetFrameworkInfoPropertyNames>false</UseAttributeForTargetFrameworkInfoPropertyNames>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>
