@@ -1,13 +1,12 @@
 // api/tests/AuthTests.cs
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
 using FluentAssertions;
 
-public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
+public class AuthTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly WebApplicationFactory<Program> _factory;
-    public AuthTests(WebApplicationFactory<Program> factory) => _factory = factory;
+    public AuthTests(TestWebApplicationFactory factory) => _factory = factory;
 
     [Fact]
     public async Task Orders_Unauthorized_Without_Token()
@@ -18,10 +17,10 @@ public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
     }
 }
 
-public class ProductsTests : IClassFixture<WebApplicationFactory<Program>>
+public class ProductsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly WebApplicationFactory<Program> _f;
-    public ProductsTests(WebApplicationFactory<Program> f) => _f = f;
+    public ProductsTests(TestWebApplicationFactory f) => _f = f;
 
     [Fact]
     public async Task List_Returns_Ok_And_Paged()

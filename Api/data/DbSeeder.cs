@@ -6,7 +6,26 @@ public static class DbSeeder
 {
     public static async Task SeedAsync(AppDbContext db, CancellationToken ct = default)
     {
-        await db.Database.MigrateAsync(ct);
+        // In normal runs apply migrations. In tests (SQLite in-memory) migrations may be absent
+        // and EF will report pending model changes. Fall back to EnsureCreatedAsync for those cases.
+        try
+        {
+            await db.Database.MigrateAsync(ct);
+        }
+        catch (InvalidOperationException)
+        {
+            // If the provider is Sqlite (common for tests) create the schema from the model instead.
+            // Re-throw for other providers to avoid hiding real problems.
+            if (db.Database.ProviderName?.IndexOf("Sqlite", StringComparison.OrdinalIgnoreCase) == 0
+                || db.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                await db.Database.EnsureCreatedAsync(ct);
+            }
+            else
+            {
+                throw;
+            }
+        }
 
         if (!await db.Products.AnyAsync(ct))
         {

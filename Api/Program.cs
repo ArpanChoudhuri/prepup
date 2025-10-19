@@ -25,7 +25,25 @@ builder.Services.AddCors(o =>
 });
 
 var jwt = builder.Configuration.GetSection("Jwt");
-var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
+
+// In tests the TestWebApplicationFactory may inject Jwt values but the timing can vary.
+// If the key is missing and we're running under the "Testing" environment, substitute a test-only key.
+// In production (non-testing) require the key and fail fast.
+var jwtKey = jwt["Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    if (builder.Environment.IsEnvironment("Testing"))
+    {
+        // test-only fallback key (safe because TestWebApplicationFactory should ideally supply its own)
+        jwtKey = "test-secret-key-0123456789";
+    }
+    else
+    {
+        throw new InvalidOperationException("Configuration value 'Jwt:Key' is required. Set Jwt:Key in appsettings or in your test host configuration.");
+    }
+}
+
+var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
 builder.Services
   .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -45,15 +63,20 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-
 // OpenAPI & Health
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 
 var cs = builder.Configuration.GetConnectionString("AppDb");
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseSqlServer(cs).EnableSensitiveDataLogging().LogTo(Console.WriteLine, LogLevel.Information)); ; // keep false in prod
+
+// Register SQL Server for normal runs, skip registration when running tests.
+// TestWebApplicationFactory runs with builder.UseEnvironment("Testing") and replaces the DbContext.
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddDbContext<AppDbContext>(opt =>
+        opt.UseSqlServer(cs).EnableSensitiveDataLogging(false)); // keep false in prod
+}
 
 // Fake in-memory data
 var products = new List<Product> { new(1, "Explorer Backpack"), new(2, "Travel Adapter"), new(3, "First Aid Kit") };
@@ -92,7 +115,6 @@ app.MapGet("/products", async (AppDbContext db, int? take, int? afterId, string?
         .OrderBy(p => p.Id)
         .Where(p => afterId == null || p.Id > afterId)
         .Where(p => q == null || p.Name.Contains(q))
-        //.Select(p => new ProductListItem(p.Id, p.Name, p.Price))
         .TagWith("GET /products list keyset");
 
     var items = await qry.Take(size).ToListAsync();
@@ -107,7 +129,6 @@ app.MapGet("/products/{id:int}", async (AppDbContext db, int id) =>
     var item = await db.Products
         .AsNoTracking()
         .Where(p => p.Id == id)
-        //.Select(p => new ProductListItem(p.Id, p.Name, p.Price))
         .TagWith("GET /products/{id}")
         .FirstOrDefaultAsync();
 
