@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Api.models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Data;
 
@@ -6,6 +7,9 @@ public class AppDbContext : DbContext
 {
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
+
+    public DbSet<ProcessedMessage> Processed => Set<ProcessedMessage>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -26,6 +30,20 @@ public class AppDbContext : DbContext
             //e.HasIndex(x => new { x.Tenant, x.CreatedUtc });
             e.Property(x => x.RowVersion).IsRowVersion(); // concurrency token
         });
+
+        b.Entity<OutboxMessage>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.DispatchedUtc, x.NextAttemptUtc });
+            e.Property(x => x.Type).HasMaxLength(100);
+        });
+
+        b.Entity<ProcessedMessage>(e =>
+        {
+            e.HasKey(x => x.MessageId);
+            e.Property(x => x.MessageId).ValueGeneratedNever();   
+        });
+
     }
 }
 

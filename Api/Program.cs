@@ -1,4 +1,5 @@
 using Api.Data;
+using Api.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -62,6 +63,8 @@ builder.Services
   });
 
 builder.Services.AddAuthorization();
+builder.Services.AddHostedService<OutboxDispatcher>();
+builder.Services.AddSingleton<IMessageSender, ConsoleMessageSender>();
 
 // OpenAPI & Health
 builder.Services.AddEndpointsApiExplorer();
@@ -79,8 +82,8 @@ if (!builder.Environment.IsEnvironment("Testing"))
 }
 
 // Fake in-memory data
-var products = new List<Product> { new(1, "Explorer Backpack"), new(2, "Travel Adapter"), new(3, "First Aid Kit") };
-var orders = new List<Order> { new(1001, "SOS1WEB", 1), new(1002, "SOS1WEB", 3) };
+//var products = new List<Product> { new(1, "Explorer Backpack"), new(2, "Travel Adapter"), new(3, "First Aid Kit") };
+var orders = new List<Order> { new Order { Id = 1, CreatedUtc = DateTime.UtcNow, ProductId = 1, Tenant = "T1" } };
 
 var app = builder.Build();
 
@@ -99,6 +102,17 @@ app.UseExceptionHandler(a => a.Run(async ctx =>
     ctx.Response.StatusCode = 500;
     await ctx.Response.WriteAsJsonAsync(new { title = "Unexpected error", traceId = ctx.TraceIdentifier });
 }));
+
+app.Use(async (ctx, next) =>
+{
+    const string k = "x-correlation-id";
+    var cid = ctx.Request.Headers.TryGetValue(k, out var v) && !string.IsNullOrWhiteSpace(v)
+        ? v.ToString()
+        : Guid.NewGuid().ToString("n");
+    ctx.Response.Headers[k] = cid;
+    Serilog.Context.LogContext.PushProperty("CorrelationId", cid);
+    await next();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -173,8 +187,44 @@ app.MapPut("/products/{id:int}", async (AppDbContext db, int id, ProductUpdDto d
 
 
 // Protected
+
 app.MapGet("/orders", () => orders)
    .RequireAuthorization();
+app.MapPost("/orders", async (AppDbContext db, OrderCreateDto dto) =>
+{
+    using var tx = await db.Database.BeginTransactionAsync();
+
+    var order = new Order { Tenant = dto.Tenant, ProductId = dto.ProductId };
+    db.Orders.Add(order);
+    await db.SaveChangesAsync();
+
+    var evt = new { order.Id, order.Tenant, order.ProductId, OccurredUtc = DateTime.UtcNow };
+    var outbox = new OutboxMessage
+    {
+        Type = "OrderCreated",
+        Payload = System.Text.Json.JsonSerializer.Serialize(evt),
+        NextAttemptUtc = DateTime.UtcNow
+    };
+    db.Outbox.Add(outbox);
+
+    await db.SaveChangesAsync();
+    await tx.CommitAsync();
+    Log.Information("Created order {OrderId} for {Tenant}", order.Id, order.Tenant);
+
+
+    return Results.Accepted($"/orders/{order.Id}", new { order.Id });
+}).RequireAuthorization();
+
+// GET /orders/{id}/status -> { id, dispatched: bool }
+app.MapGet("/orders/{id:int}/status", async (AppDbContext db, int id) =>
+{
+    var order = await db.Orders.FindAsync(id);
+    if (order is null) return Results.NotFound();
+    // Consider dispatched when corresponding outbox message for OrderCreated has DispatchedUtc set
+    var dispatched = await db.Outbox.AnyAsync(x =>
+        x.Type == "OrderCreated" && x.Payload.Contains($"\"Id\":{id}") && x.DispatchedUtc != null);
+    return Results.Ok(new { id, dispatched });
+});
 
 app.MapPost("/auth/token", (TokenRequest req) =>
 {
@@ -199,6 +249,5 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-public record Product(int Id, string Name);
-public record Order(int Id, string Tenant, int ProductId);
+public record OrderCreateDto(string Tenant, int ProductId);
 public record TokenRequest(string? User, string? Password);

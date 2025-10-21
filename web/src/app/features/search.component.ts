@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, of, startWith, switchMap, tap } from 'rxjs';
+import { OrderService } from '../features/order/order.service';
+import { ToastService } from '../features/toast/toast.service';
+
 
 type Item = { id: number; name: string };
 
@@ -33,11 +36,49 @@ type Item = { id: number; name: string };
       </li>
     </ul>
   </section>
-  `
+  <section style="margin-top:1rem">
+  <h2>Create Order</h2>
+
+  <button
+    (click)="createOrder(1)"
+    [disabled]="state === 'submitting' || state === 'queued'"
+    [attr.aria-busy]="state === 'submitting' || state === 'queued' ? 'true' : null"
+  >
+    {{ state === 'submitting' ? 'Submitting…' : state === 'queued' ? 'Queued…' : 'Create Order (Product #1)' }}
+  </button>
+
+  <div *ngIf="createdOrderId && state === 'queued'" style="margin-top:.5rem">
+    <small>Order #{{ createdOrderId }} is queued. We’re dispatching it shortly…</small>
+    <button (click)="checkNow(createdOrderId)">Check now</button>
+  </div>
+
+  <div *ngIf="state === 'dispatched'" style="margin-top:.5rem">
+    <strong>Order #{{ createdOrderId }} dispatched.</strong>
+  </div>
+
+  <div *ngIf="state === 'failed'" class="error" style="margin-top:.5rem">
+    {{ ordersError || 'Something went wrong.' }}
+    <button (click)="createOrder(1)">Retry</button>
+  </div>
+</section>
+`
+  
+  
 })
+
 export class SearchComponent {
+
+  constructor(
+  public ordersApi: OrderService,
+  public toasts: ToastService
+  ) {}
   private http = inject(HttpClient);
   q = new FormControl('', { nonNullable: true });
+
+  // ... inside component class
+  state: 'idle' | 'submitting' | 'queued' | 'dispatched' | 'failed' = 'idle';
+  createdOrderId: number | null = null;
+  ordersError: string | null = null;
 
   vm$ = this.q.valueChanges.pipe(
     map(v => v.trim()),
@@ -59,7 +100,7 @@ export class SearchComponent {
  // --- Orders (protected via interceptor) ---
   orders: Item[] | null = null;
   ordersLoading = false;
-  ordersError: string | null = null;
+
 
   loadOrders() {
     this.ordersLoading = true;
@@ -85,5 +126,49 @@ export class SearchComponent {
       .subscribe();
   }
   trackByOrderId = (_: number, it: Item) => it.id;
+
+  createOrder(productId: number) {
+  if (this.state === 'submitting' || this.state === 'queued') return;
+  this.state = 'submitting';
+  this.ordersError = null;
+
+  this.ordersApi.create$({ tenant: 'SOS1WEB', productId }).subscribe({
+    next: (res) => {
+      this.createdOrderId = res.id;
+      this.state = 'queued';
+      this.toasts.info(`Order #${res.id} queued. We’ll notify when dispatched.`);
+
+      this.ordersApi.waitUntilDispatched$(res.id, 2000, 45000).subscribe({
+        next: (s) => {
+          if (s.dispatched) {
+            this.state = 'dispatched';
+            this.toasts.success(`Order #${s.id} dispatched ✅`);
+          }
+        },
+        error: () => {
+          this.state = 'failed';
+          this.toasts.error(`Failed while tracking order #${res.id}`);
+        },
+        complete: () => {
+          if (this.state !== 'dispatched') {
+            this.state = 'failed';
+            this.toasts.warn(`Order #${res.id} still pending. We’ll keep it queued.`);
+          }
+        }
+      });
+    },
+    error: (err) => {
+      this.state = 'failed';
+      this.ordersError = err?.status === 401 ? 'Unauthorized' : 'Create order failed';
+      this.toasts.error(this.ordersError);
+    }
+  });
+}
+checkNow(id: number | null): void {
+  if (id == null) return;
+  this.ordersApi.status$(id).subscribe(s => {
+    this.toasts.info('Dispatched: ' + s.dispatched);
+  });
+}
 
 }
