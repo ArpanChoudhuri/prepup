@@ -7,48 +7,60 @@ flowchart TD
     C1[Backend Clients]
     C2[Partner Systems]
   end
-  C1 -->|HTTPS| APIGW[API Gateway\n(Usage Plans, API Keys)]
+
+  C1 -->|HTTPS| APIGW["API Gateway<br/>(Usage Plans, API Keys)"]
   C2 -->|HTTPS| APIGW
+
   APIGW --> ALB[ALB]
-  ALB --> API[EKS: API Service\n(.NET)]
+  ALB --> API["EKS: API Service<br/>(.NET)"]
+
   subgraph Data Plane
-    REDIS[(Redis\nRate Limit + Idempotency Cache)]
-    RDS[(RDS Postgres\nTenants, Audit, Outbox, Processed)]
-    DDB[(DynamoDB\nNotification Status)]
-    S3[(S3\nAudit/Cold Storage)]
-    OS[(OpenSearch/CloudWatch\nLogs)]
-    KMS[(KMS)]
+    REDIS["Redis<br/>(Rate Limit + Idempotency Cache)"]
+    RDS["RDS Postgres<br/>(Tenants, Audit, Outbox, Processed)"]
+    DDB["DynamoDB<br/>(Notification Status)"]
+    S3["S3<br/>(Audit/Cold Storage)"]
+    OS["OpenSearch/CloudWatch<br/>(Logs)"]
+    KMS[KMS]
   end
+
   API --> REDIS
   API --> RDS
   API -->|Status Writes| DDB
   API -->|Bulk/Archive| S3
   API --> OS
   API --> KMS
-  API --> SQS[(SQS\nOutbox Queue)]
+
+  API --> SQS["SQS<br/>(Outbox Queue)"]
+
   subgraph Workers
-    WK1[EKS Worker(s)\nDispatcher]
+    WK1["EKS Worker(s)<br/>Dispatcher"]
   end
+
   SQS --> WK1
   WK1 -->|Idempotent Guard| RDS
   WK1 -->|Update Status| DDB
   WK1 --> OS
+
   subgraph Providers
-    SNS[SNS/SMS]
-    SES[SES/Email]
-    PUSH[FCM/APNs]
+    SNS["SNS/SMS"]
+    SES["SES/Email"]
+    PUSH["FCM/APNs"]
   end
+
   WK1 --> SNS
   WK1 --> SES
   WK1 --> PUSH
+
   subgraph Callbacks
-    PB[Provider Callbacks\n(Webhooks)]
+    PB["Provider Callbacks<br/>(Webhooks)"]
   end
+
   SNS -.-> PB
   SES -.-> PB
   PUSH -.-> PB
   PB --> API
   API -->|Status Update| DDB
+
   classDef storage fill:#eef,stroke:#88a;
   class RDS,REDIS,DDB,S3 storage;
 sequenceDiagram
