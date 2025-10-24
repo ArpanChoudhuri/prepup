@@ -1,4 +1,4 @@
-﻿# Architecture
+# Architecture
 
 ## High-Level Diagram
 ```mermaid
