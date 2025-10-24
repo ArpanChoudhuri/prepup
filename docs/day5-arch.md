@@ -14,7 +14,7 @@ flowchart TD
   APIGW --> ALB[ALB]
   ALB --> API["EKS: API Service<br/>(.NET)"]
 
-  subgraph Data Plane
+  subgraph "Data Plane"
     REDIS["Redis<br/>(Rate Limit + Idempotency Cache)"]
     RDS["RDS Postgres<br/>(Tenants, Audit, Outbox, Processed)"]
     DDB["DynamoDB<br/>(Notification Status)"]
@@ -33,7 +33,7 @@ flowchart TD
   API --> SQS["SQS<br/>(Outbox Queue)"]
 
   subgraph Workers
-    WK1["EKS Worker(s)<br/>Dispatcher"]
+    WK1["EKS Worker(s) Dispatcher"]
   end
 
   SQS --> WK1
@@ -52,7 +52,7 @@ flowchart TD
   WK1 --> PUSH
 
   subgraph Callbacks
-    PB["Provider Callbacks<br/>(Webhooks)"]
+    PB["Provider Callbacks (Webhooks)"]
   end
 
   SNS -.-> PB
@@ -64,67 +64,58 @@ flowchart TD
   classDef storage fill:#eef,stroke:#88a;
   class RDS,REDIS,DDB,S3 storage;
 sequenceDiagram
-  autonumber
   participant CL as Client
-  participant GW as API Gateway
-  participant API as API (EKS)
+  participant GW as "API Gateway"
+  participant API as "API (EKS)"
   participant R as Redis
   participant DB as RDS
   participant Q as SQS
+
   CL->>GW: POST /v1/notifications (Idempotency-Key, X-Tenant-Id)
-  GW->>API: Forward
-  API->>R: GET idem:{tenant}:{key}
+  GW->>API: Forward request
+  API->>R: Check idem:{tenant}:{key}
   alt Duplicate
-    R-->>API: hit {notificationId}
-    API-->>CL: 202 {notificationId} (cached)
+    R-->>API: cache hit (notificationId)
+    API-->>CL: 202 Accepted (cached id)
   else New
     R-->>API: miss
-    API->>R: RateLimit try_consume
-    alt Allowed
-      API->>DB: TXN audit+outbox
-      API->>Q: Enqueue {messageId, payload, trace}
-      API-->>CL: 202 {notificationId}
-      API->>R: SET idem:{tenant}:{key} -> {notificationId} TTL 24h
-    else Throttled
-      API-->>CL: 429
-    end
+    API->>DB: TXN audit + outbox
+    API->>Q: Enqueue message
+    API-->>CL: 202 Accepted (notificationId)
+    API->>R: Store idem key with TTL
   end
 sequenceDiagram
-  autonumber
   participant Q as SQS
   participant WK as Worker
   participant DB as RDS
-  participant P as Provider
+  participant P as "Provider"
   participant D as DynamoDB
-  loop Poll
-    Q-->>WK: Receive {messageId, payload}
-    WK->>DB: TryInsert processed(message_id)
-    alt First time
-      DB-->>WK: ok
-      rect rgb(245,245,245)
-        WK->>P: Send
-        alt Success
-          P-->>WK: 2xx
-          WK->>D: status=SENT
-          WK->>DB: audit(SENT)
-          WK-->>Q: Delete
-        else Retriable
-          P-->>WK: 5xx/timeout
-          WK->>DB: outbox attempt+1; NextAttemptUtc
-          WK-->>Q: Release
-        end
-      end
-    else Duplicate
-      DB-->>WK: exists
-      WK-->>Q: Delete
+
+  Q-->>WK: Receive message
+  WK->>DB: Try insert processed(message_id)
+  alt First-time
+    DB-->>WK: ok
+    WK->>P: Send notification
+    alt Success
+      P-->>WK: 2xx
+      WK->>D: status = SENT
+      WK->>DB: audit(SENT)
+      WK-->>Q: Delete message
+    else Retriable error
+      P-->>WK: 5xx/timeout
+      WK->>DB: bump attempts / schedule next
+      WK-->>Q: Release (visibility timeout)
     end
+  else Duplicate
+    DB-->>WK: already exists
+    WK-->>Q: Delete message (skip)
   end
 sequenceDiagram
-  autonumber
   participant CL as Client
-  participant GW as API Gateway
-  participant API as API (EKS)
+  participant GW as "API Gateway"
+  participant API as "API (EKS)"
   participant D as DynamoDB
+
   CL->>GW: GET /v1/notifications/{id}/status
   GW->>API: Forward
   API->>D: GetItem tenant#id
@@ -132,7 +123,7 @@ sequenceDiagram
     D-->>API: {state,lastUpdate}
     API-->>CL: 200 {state,lastUpdate}
   else Missing
-    API-->>CL: 404
+    API-->>CL: 404 Not Found
   end
 stateDiagram-v2
   [*] --> QUEUED
