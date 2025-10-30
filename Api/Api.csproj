@@ -13,6 +13,8 @@
     <!-- Neutralize any weird setting coming from parent Directory.Build.* -->
     <UseAttributeForTargetFrameworkInfoPropertyNames>false</UseAttributeForTargetFrameworkInfoPropertyNames>
     <PreserveCompilationContext>true</PreserveCompilationContext>
+    <UserSecretsId>0f7b540a-d456-4856-a4cb-096d472e2cfc</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +26,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageReference Include="Polly" Version="8.6.4" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />

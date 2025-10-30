@@ -1,0 +1,13 @@
+# k8s/00-namespace-and-config.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prepup
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  namespace: prepup
+data:
+  API_BASE_URL: "http://api.prepup.local"

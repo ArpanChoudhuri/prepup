@@ -1,0 +1,73 @@
+name: deploy-dev
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "api/**", "web/**", "k8s/**", ".github/workflows/deploy-dev.yaml" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_API: ghcr.io/${{ github.repository_owner }}/prepup-api
+      IMAGE_WEB: ghcr.io/${{ github.repository_owner }}/prepup-web
+      KUBE_NAMESPACE: prepup
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_API }}:latest
+            ${{ env.IMAGE_API }}:${{ github.sha }}
+
+      - name: Build & push Web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./web/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_WEB }}:latest
+            ${{ env.IMAGE_WEB }}:${{ github.sha }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Write kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${KUBECONFIG_B64}" | base64 -d > $HOME/.kube/config
+        env:
+          KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+
+      - name: Patch images to latest and apply manifests
+        run: |
+          sed -i "s|image: .*prepup-api.*|image: $IMAGE_API:latest|g" k8s/10-api.yaml
+          sed -i "s|image: .*prepup-web.*|image: $IMAGE_WEB:latest|g" k8s/20-web.yaml
+          kubectl apply -f k8s/00-namespace-and-config.yaml
+          kubectl apply -f k8s/10-api.yaml
+          kubectl apply -f k8s/20-web.yaml
+          kubectl apply -f k8s/90-ingress.yaml
+
+      - name: Rollout status
+        run: |
+          kubectl -n $KUBE_NAMESPACE rollout status deploy/api --timeout=120s
+          kubectl -n $KUBE_NAMESPACE rollout status deploy/web --timeout=120s
