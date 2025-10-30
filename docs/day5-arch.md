@@ -1,6 +1,7 @@
-﻿# Architecture
+# Architecture
 
 ## High-Level Diagram
+
 ```mermaid
 flowchart TD
   subgraph Clients
@@ -63,6 +64,9 @@ flowchart TD
 
   classDef storage fill:#eef,stroke:#88a;
   class RDS,REDIS,DDB,S3 storage;
+```
+
+```mermaid
 sequenceDiagram
   participant CL as Client
   participant GW as "API Gateway"
@@ -84,6 +88,9 @@ sequenceDiagram
     API-->>CL: 202 Accepted (notificationId)
     API->>R: Store idem key with TTL
   end
+```
+
+```mermaid
 sequenceDiagram
   participant Q as SQS
   participant WK as Worker
@@ -110,6 +117,9 @@ sequenceDiagram
     DB-->>WK: already exists
     WK-->>Q: Delete message (skip)
   end
+```
+
+```mermaid
 sequenceDiagram
   participant CL as Client
   participant GW as "API Gateway"
@@ -125,6 +135,9 @@ sequenceDiagram
   else Missing
     API-->>CL: 404 Not Found
   end
+```
+
+```mermaid
 stateDiagram-v2
   [*] --> QUEUED
   QUEUED --> SENDING : worker dequeues
@@ -137,3 +150,4 @@ stateDiagram-v2
   POISONED --> [*]
   DELIVERED --> [*]
   FAILED --> [*]
+```
