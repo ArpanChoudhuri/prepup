@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <!-- Pick ONE target framework: net8.0 is stable and works with SDK 9 -->
     <TargetFramework>net8.0</TargetFramework>
@@ -27,6 +27,14 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <PackageReference Include="OpenTelemetry" Version="1.13.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.13.1" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.13.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.13.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.13.0-beta.2" />
+    <!-- Add runtime instrumentation package so AddRuntimeInstrumentation is available -->
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.13.0" />
     <PackageReference Include="Polly" Version="8.6.4" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />

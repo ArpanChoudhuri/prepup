@@ -5,8 +5,8 @@ services:
     environment:
       SA_PASSWORD: "${SA_PASSWORD:-YourStrong!Passw0rd}"
       ACCEPT_EULA: "Y"
-    expose:
-      - "1433"
+    ports:
+      - "1433:1433"
     healthcheck:
       # simple TCP probe to avoid dependency on sqlcmd being present;
       # use a longer start_period so SQL Server can finish initialization

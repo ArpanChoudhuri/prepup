@@ -3,7 +3,10 @@ using Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
+using PrepUp.Telemetry;
 using Serilog;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Api.Messaging;
 
@@ -23,6 +26,7 @@ public class OutboxDispatcher : BackgroundService
         {
             try
             {
+
                 using var scope = _sp.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var sender = scope.ServiceProvider.GetRequiredService<IMessageSender>();
@@ -38,16 +42,30 @@ public class OutboxDispatcher : BackgroundService
                 {
                     try
                     {
+                        var attrs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        attrs.Add("id", m.Id.ToString());
+                        var parent = TracePropagators.ExtractFromDictionary(attrs);
+                        using var span = Traces.OutboxSource.StartActivity("Outbox Dispatch", ActivityKind.Consumer, parent);
+                        span?.SetTag("tenant.id", m.Id);
+                        span?.SetTag("msg.kind", m.Type);
+                        span?.SetTag("msg.id", m.Id);
                         if (!await db.TryMarkProcessedAsync(m.Id, stoppingToken))
                         {
                             Log.Information("Skip already processed {Id}", m.Id);
                             m.DispatchedUtc = DateTime.UtcNow; // or keep it as is if only skipping consumer
                             continue;
                         }
+                        span?.SetTag("idempotent.first_time", m.Id);
+
+                        using var call = Traces.OutboxSource.StartActivity("Provider Send", ActivityKind.Client);
+                        call?.SetTag("provider", "env.Provider");
                         await Policy
                             .Handle<Exception>()
                             .WaitAndRetryAsync(delaySeq)
                             .ExecuteAsync(ct => sender.SendAsync(m.Type, m.Payload, ct), stoppingToken);
+
+                        call?.SetStatus(ActivityStatusCode.Ok);
+                        span?.SetStatus(ActivityStatusCode.Ok);
 
                         m.DispatchedUtc = DateTime.UtcNow;
                         m.Error = null;

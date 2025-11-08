@@ -3,7 +3,15 @@ using Api.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Instrumentation.Runtime;
+using OpenTelemetry.Instrumentation.SqlClient;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using PrepUp.Telemetry;
 using Serilog;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Text;
 using static Api.models.ProductDtos;
 using static Api.models.ProductUpdateDto;
@@ -85,6 +93,41 @@ if (!builder.Environment.IsEnvironment("Testing"))
 //var products = new List<Product> { new(1, "Explorer Backpack"), new(2, "Travel Adapter"), new(3, "First Aid Kit") };
 var orders = new List<Order> { new Order { Id = 1, CreatedUtc = DateTime.UtcNow, ProductId = 1, Tenant = "T1" } };
 
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(o =>
+{
+    o.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ ";
+    o.SingleLine = true;
+});
+
+// Register an ActivitySource that the worker will use
+builder.Services.AddSingleton(new ActivitySource("OutboxDispatcher"));
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(rb => rb.AddService(serviceName: "prepup-api", serviceVersion: "1.0"))
+    .WithTracing(b => b
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddSqlClientInstrumentation() // removed option that didn't exist in installed package
+        .AddSource("OutboxDispatcher") // custom spans (below)
+        .AddOtlpExporter(o => o.Endpoint = new Uri("http://localhost:16686/v1/traces"))
+    )
+    .WithMetrics(m => m
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddOtlpExporter(o => o.Endpoint = new Uri("http://localhost:16686/v1/metrics"))
+    );
+
+// Program.cs, before app.Build()
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(o =>
+{
+    o.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ ";
+    o.SingleLine = true; // compact logs
+});
+
+
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
@@ -103,15 +146,30 @@ app.UseExceptionHandler(a => a.Run(async ctx =>
     await ctx.Response.WriteAsJsonAsync(new { title = "Unexpected error", traceId = ctx.TraceIdentifier });
 }));
 
+//app.Use(async (ctx, next) =>
+//{
+//    const string k = "x-correlation-id";
+//    var cid = ctx.Request.Headers.TryGetValue(k, out var v) && !string.IsNullOrWhiteSpace(v)
+//        ? v.ToString()
+//        : Guid.NewGuid().ToString("n");
+//    ctx.Response.Headers[k] = cid;
+//    Serilog.Context.LogContext.PushProperty("CorrelationId", cid);
+//    await next();
+//});
+
 app.Use(async (ctx, next) =>
 {
-    const string k = "x-correlation-id";
-    var cid = ctx.Request.Headers.TryGetValue(k, out var v) && !string.IsNullOrWhiteSpace(v)
-        ? v.ToString()
-        : Guid.NewGuid().ToString("n");
-    ctx.Response.Headers[k] = cid;
-    Serilog.Context.LogContext.PushProperty("CorrelationId", cid);
-    await next();
+    var logger = ctx.RequestServices.GetRequiredService<ILoggerFactory>()
+        .CreateLogger("Correlation");
+
+    using (logger.BeginScope(new Dictionary<string, object?>
+    {
+        ["trace_id"] = Activity.Current?.TraceId.ToString(),
+        ["span_id"] = Activity.Current?.SpanId.ToString()
+    }))
+    {
+        await next();
+    }
 });
 
 app.UseAuthentication();
@@ -120,6 +178,16 @@ app.UseAuthorization();
 app.MapHealthChecks("/healthz");
 
 // Public
+
+var meter = new Meter("prepup-api", "1.0.0");
+var sentCounter = meter.CreateCounter<long>("notifications.sent");
+
+app.MapPost("/v1/notifications", (/* args */) =>
+{
+    sentCounter.Add(1, new KeyValuePair<string, object?>("tenant.id", "tenantA"));
+    return Results.Accepted();
+});
+
 app.MapGet("/products", async (AppDbContext db, int? take, int? afterId, string? q) =>
 {
     var size = Math.Clamp(take ?? 20, 1, 100);
@@ -205,10 +273,23 @@ app.MapPost("/orders", async (AppDbContext db, OrderCreateDto dto) =>
         Payload = System.Text.Json.JsonSerializer.Serialize(evt),
         NextAttemptUtc = DateTime.UtcNow
     };
+
+    using var span = Traces.OutboxSource.StartActivity("Outbox Enqueue", ActivityKind.Producer);
+    span?.SetTag("tenant.id", outbox.Id);
+    span?.SetTag("msg.kind", outbox.Type);
+    span?.SetTag("msg.id", outbox.Id);
     db.Outbox.Add(outbox);
+
+
 
     await db.SaveChangesAsync();
     await tx.CommitAsync();
+
+    var attrs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    attrs.Add("id", outbox.Id.ToString());
+    TracePropagators.InjectIntoDictionary(Activity.Current, attrs);
+
+    span?.SetStatus(ActivityStatusCode.Ok);
     Log.Information("Created order {OrderId} for {Tenant}", order.Id, order.Tenant);
 
 
