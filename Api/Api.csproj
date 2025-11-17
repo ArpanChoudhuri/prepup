@@ -18,6 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.21" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
@@ -40,5 +41,15 @@
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Only add the Application project reference when that project file actually exists.
+         This avoids restore/build warnings in CI or container builds where the Application
+         project may be omitted. -->
+    <ProjectReference Include="..\Application\Application.csproj"
+                      Condition="Exists('..\Application\Application.csproj')" />
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj"
+                      Condition="Exists('..\Infrastructure\Infrastructure.csproj')" />
   </ItemGroup>
 </Project>

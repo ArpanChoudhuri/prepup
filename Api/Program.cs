@@ -1,7 +1,14 @@
-using Api.Data;
 using Api.Messaging;
+using Application.Common.Behaviors;
+using Application.Common.Middleware;
+using Application.Orders.Commands.CreateOrder;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Infra.Data;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Instrumentation.Runtime;
 using OpenTelemetry.Instrumentation.SqlClient;
@@ -13,8 +20,7 @@ using Serilog;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Text;
-using static Api.models.ProductDtos;
-using static Api.models.ProductUpdateDto;
+using static Infra.models.ProductUpdateDto;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +80,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddHostedService<OutboxDispatcher>();
 builder.Services.AddSingleton<IMessageSender, ConsoleMessageSender>();
 
+
+
 // OpenAPI & Health
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -91,7 +99,7 @@ if (!builder.Environment.IsEnvironment("Testing"))
 
 // Fake in-memory data
 //var products = new List<Product> { new(1, "Explorer Backpack"), new(2, "Travel Adapter"), new(3, "First Aid Kit") };
-var orders = new List<Order> { new Order { Id = 1, CreatedUtc = DateTime.UtcNow, ProductId = 1, Tenant = "T1" } };
+var orders = new List<Order> { new Order {CustomerId="1", Id = Guid.NewGuid(),Status="active", CreatedUtc = DateTime.UtcNow, Tenant = "T1" } };
 
 builder.Logging.ClearProviders();
 builder.Logging.AddSimpleConsole(o =>
@@ -127,8 +135,19 @@ builder.Logging.AddSimpleConsole(o =>
     o.SingleLine = true; // compact logs
 });
 
+builder.Services.AddTransient<ExceptionHandlingMiddleware>();
+
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateOrderCommand).Assembly));
+builder.Services.AddValidatorsFromAssembly(typeof(CreateOrderCommand).Assembly); // This now works if FluentValidation is referenced
+
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseSerilogRequestLogging();
 app.UseCors(CorsDev);
@@ -188,7 +207,7 @@ app.MapPost("/v1/notifications", (/* args */) =>
     return Results.Accepted();
 });
 
-app.MapGet("/products", async (AppDbContext db, int? take, int? afterId, string? q) =>
+app.MapGet("/products", async (AppDbContext db, int? take, Guid? afterId, string? q) =>
 {
     var size = Math.Clamp(take ?? 20, 1, 100);
 
@@ -200,13 +219,13 @@ app.MapGet("/products", async (AppDbContext db, int? take, int? afterId, string?
         .TagWith("GET /products list keyset");
 
     var items = await qry.Take(size).ToListAsync();
-    var nextAfter = items.Count > 0 ? items[^1].Id : (int?)null;
+    var nextAfter = items.Count > 0 ? items[^1].Id : (Guid?)null;
 
     return Results.Ok(new { items, nextAfter });
 });
 
 // GET /products/{id}
-app.MapGet("/products/{id:int}", async (AppDbContext db, int id) =>
+app.MapGet("/products/{id:int}", async (AppDbContext db, Guid id) =>
 {
     var item = await db.Products
         .AsNoTracking()
@@ -218,7 +237,7 @@ app.MapGet("/products/{id:int}", async (AppDbContext db, int id) =>
 });
 
 // PUT /products/{id}
-app.MapPut("/products/{id:int}", async (AppDbContext db, int id, ProductUpdDto dto) =>
+app.MapPut("/products/{id:int}", async (AppDbContext db, Guid id, ProductUpdDto dto) =>
 {
     var entity = await db.Products.FirstOrDefaultAsync(p => p.Id == id);
     if (entity is null) return Results.NotFound();
@@ -262,11 +281,11 @@ app.MapPost("/orders", async (AppDbContext db, OrderCreateDto dto) =>
 {
     using var tx = await db.Database.BeginTransactionAsync();
 
-    var order = new Order { Tenant = dto.Tenant, ProductId = dto.ProductId };
+    var order = new Order {CustomerId = "1",Status="active", Tenant = dto.Tenant};
     db.Orders.Add(order);
     await db.SaveChangesAsync();
 
-    var evt = new { order.Id, order.Tenant, order.ProductId, OccurredUtc = DateTime.UtcNow };
+    var evt = new { order.Id, order.Tenant, OccurredUtc = DateTime.UtcNow };
     var outbox = new OutboxMessage
     {
         Type = "OrderCreated",
@@ -322,6 +341,8 @@ app.MapPost("/auth/token", (TokenRequest req) =>
     return Results.Ok(new { access_token = jwtStr, token_type = "Bearer", expires_in = 600 });
 });
 
+app.MapControllers();
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -330,5 +351,5 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-public record OrderCreateDto(string Tenant, int ProductId);
+public record OrderCreateDto(string Tenant, Guid ProductId);
 public record TokenRequest(string? User, string? Password);

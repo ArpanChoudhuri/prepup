@@ -6,7 +6,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Api.Data;
+using Infra.Data;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {

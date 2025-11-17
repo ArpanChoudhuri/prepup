@@ -1,5 +1,4 @@
-﻿using Api.data;
-using Api.Data;
+﻿using Infra.Data;
 using Microsoft.EntityFrameworkCore;
 using Polly;
 using Polly.Contrib.WaitAndRetry;

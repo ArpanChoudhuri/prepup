@@ -1,0 +1,32 @@
+<div class="p-3">
+  <input type="text"
+         class="form-control mb-3"
+         placeholder="Search orders..."
+         (input)="onSearch($any($event.target)?.value)" />
+
+  <ng-container *ngIf="orders$ | async as orders; else loading">
+    <div *ngIf="orders.length; else noResults">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Date</th>
+            <th>Total</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let o of orders; trackBy: trackById">
+            <td>{{ o.orderId }}</td>
+            <td>{{ o.orderDate | date:'short' }}</td>
+            <td>{{ o.total | currency }}</td>
+            <td>{{ o.status }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noResults><p>No matching orders.</p></ng-template>
+  </ng-container>
+
+  <ng-template #loading><p>Loading…</p></ng-template>
+</div>
