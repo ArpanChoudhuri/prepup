@@ -30,7 +30,7 @@ public static class DbSeeder
         if (!await db.Products.AnyAsync(ct))
         {
             db.Products.AddRange(
-                new Product { Name = "Explorer Backpack", Price = 79.99m, IsActive=true, UnitPrice= 100 },
+                new Product { Name = "Explorer Backpack", Price = 79.99m, IsActive = true, UnitPrice = 100 },
                 new Product { Name = "Travel Adapter", Price = 19.99m, IsActive = true, UnitPrice = 100 },
                 new Product { Name = "First Aid Kit", Price = 29.99m, IsActive = true, UnitPrice = 100 }
             );
@@ -39,18 +39,41 @@ public static class DbSeeder
         if (!await db.Orders.AnyAsync(ct))
         {
             db.Orders.AddRange(
-                new Order {CustomerId="1",Status="active", Tenant = "TEN1ANT1", Total=200},
-                new Order {CustomerId = "1", Status="active", Tenant = "TEN1ANT1", Total=200 }
+                new Order { CustomerId = "1", Status = "active", Tenant = "TEN1ANT1", Total = 200 },
+                new Order { CustomerId = "1", Status = "active", Tenant = "TEN1ANT1", Total = 200 }
             );
+        }
+
+        // If we added products or orders above they are only tracked locally until SaveChanges is called.
+        // Persist them now so subsequent queries (used to create order items) will return the expected entities.
+        if (db.ChangeTracker.HasChanges())
+        {
+            await db.SaveChangesAsync(ct);
         }
 
         if (!await db.OrderItem.AnyAsync(ct))
         {
-            db.OrderItem.AddRange(
-                new OrderItem { Id=Guid.NewGuid(), OrderId= db.Orders.ToList().FirstOrDefault().Id, Product=db.Products.ToList().FirstOrDefault(), LineTotal=100, Quantity=2, UnitPrice=100 }
-            );
-        }
+            // Query the persisted data (guaranteed to exist after the SaveChanges above when needed)
+            var firstOrder = await db.Orders.OrderBy(o => o.Id).FirstOrDefaultAsync(ct);
+            var firstProduct = await db.Products.OrderBy(p => p.Id).FirstOrDefaultAsync(ct);
 
-        await db.SaveChangesAsync(ct);
+            // Defensive null checks to avoid NullReferenceException in case something unexpected happened.
+            if (firstOrder != null && firstProduct != null)
+            {
+                db.OrderItem.AddRange(
+                    new OrderItem
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = firstOrder.Id,
+                        Product = firstProduct,
+                        LineTotal = 100,
+                        Quantity = 2,
+                        UnitPrice = 100
+                    }
+                );
+
+                await db.SaveChangesAsync(ct);
+            }
+        }
     }
 }
