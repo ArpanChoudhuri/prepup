@@ -33,8 +33,9 @@ builder.Host.UseSerilog((ctx, lc) => lc
 const string CorsDev = "cors-dev";
 builder.Services.AddCors(o =>
 {
+    // Allow the Angular dev server and local web preview origin used by the frontend
     o.AddPolicy(CorsDev, p => p
-        .WithOrigins("http://localhost:4200")
+        .WithOrigins("http://localhost:4200", "http://localhost:52763")
         .AllowAnyHeader()
         .AllowAnyMethod());
 });

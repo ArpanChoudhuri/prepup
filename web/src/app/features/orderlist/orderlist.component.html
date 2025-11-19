@@ -4,26 +4,30 @@
          placeholder="Search orders..."
          (input)="onSearch($any($event.target)?.value)" />
 
-  <ng-container *ngIf="orders$ | async as orders; else loading">
-    <div *ngIf="orders.length; else noResults">
-      <table class="table table-striped">
+  <ng-container *ngIf="orders$ | async as orders">
+    <div *ngIf="orders?.length; else noResults">
+        <app-ordercard
+          *ngFor="let o of orders; trackBy: trackById"
+          [order]="o">
+        </app-ordercard>
+      <!-- <table class="table table-striped">
         <thead>
           <tr>
             <th>Order #</th>
-            <th>Date</th>
+            <th>Customer</th>
             <th>Total</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let o of orders; trackBy: trackById">
-            <td>{{ o.orderId }}</td>
-            <td>{{ o.orderDate | date:'short' }}</td>
-            <td>{{ o.total | currency }}</td>
+            <td>{{ o.id }}</td>
+            <td>{{ o.customerName }}</td>
+            <td>{{ o.totalAmount | currency }}</td>
             <td>{{ o.status }}</td>
           </tr>
         </tbody>
-      </table>
+      </table> -->
     </div>
     <ng-template #noResults><p>No matching orders.</p></ng-template>
   </ng-container>

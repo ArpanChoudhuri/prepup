@@ -4,6 +4,7 @@ import { OrdersListComponent } from './features/orderlist/orderlist.component';
 
 export const routes: Routes = [
 {path: '', component: SearchComponent},
-{path: 'orders', component: OrdersListComponent}
+{path: 'orders', 
+    loadChildren: () => import('./features/orderlist/orderlist.routes').then(m => m.ORDERS_ROUTES)},
 
 ];

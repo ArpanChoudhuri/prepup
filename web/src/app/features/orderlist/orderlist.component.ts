@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OrdersService } from './orderlist.service';
 import { BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'rxjs';
+import { OrdercardComponent } from "./ordercard/ordercard.component";
 
 @Component({
   selector: 'app-orders-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, OrdercardComponent],
   templateUrl: './orderlist.component.html',
   styleUrls: ['./orderlist.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -18,7 +19,13 @@ export class OrdersListComponent {
     debounceTime(300),
     distinctUntilChanged(),
     switchMap(term => this.svc.searchOrders(term)
-      .pipe(catchError(err => { console.error(err); return of([]); })))
+      .pipe(
+        catchError(err => {
+          console.error(err);
+          return of([]);
+        })
+      )
+    )
   );
  trackById = (_: number, item: any) => item.orderId;
 
