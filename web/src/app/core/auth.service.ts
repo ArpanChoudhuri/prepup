@@ -15,8 +15,12 @@ export class AuthService {
   tokenChanges(): Observable<string | null> { return this.token$.asObservable();}
 
   login(username = 'demo', password = 'demo'): Observable<string> {
-    return this.http.post<any>('http://localhost:5134/auth/token', { user: username, password })
-      .pipe(tap(r => this.token$.next(r.access_token)), switchMap(r => of(r.access_token)));
+    // Use HTTPS to match the API dev server (Kestrel) which serves on https://localhost:44321
+    return this.http.post<any>('https://localhost:44321/auth/token', { user: username, password })
+      .pipe(
+        tap(r => this.token$.next(r.access_token)),
+        switchMap(r => of(r.access_token))
+      );
   }
 
   // Refresh = just call token endpoint again (dev-only)

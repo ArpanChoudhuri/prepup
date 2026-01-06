@@ -1,0 +1,27 @@
+<div class="products-container">
+    <h2>Product List</h2>
+    <ng-container *ngIf="products$ | async as products">
+      <div *ngIf="products?.length && !showAddUpdateForm; else noResults">
+        <ul>
+            <li *ngFor="let product of products; trackBy: trackById">
+                <h3>{{ product.name }}</h3>
+                <p>{{ product.name }}</p>
+                <p>{{ product.isActive }}</p>
+                <p>Price: ${{ product.price}}</p>
+                <button type="button" (click)="onAddNew(product)">
+                    Add
+                </button>
+            </li>   
+        </ul>
+      </div>
+      <ng-template #noResults><p>No products available.</p></ng-template>
+    </ng-container>
+</div>
+
+<app-productaddupdate
+*ngIf="selectedProduct  && showAddUpdateForm"
+[product]="selectedProduct"
+(close)="onCLoseAndEdit()"
+(save)="search$.next('')"
+
+></app-productaddupdate>

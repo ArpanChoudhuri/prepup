@@ -1,0 +1,23 @@
+<div *ngIf="product; else noSelection" class="p-3">
+  <h2>{{ product.id ? 'Edit Product' : 'Add New Product' }}</h2>
+  <form>
+    <div class="mb-3">
+      <label for="productName" class="form-label">Product Name</label>
+      <input type="text" class="form-control" id="productName" [(ngModel)]="product.name" name="productName" />
+    </div>
+    <div class="mb-3">
+      <label for="productPrice" class="form-label">Unit Price</label>
+      <textarea class="form-control" id="productPrice" [(ngModel)]="product.newPrice" name="productDescription"></textarea>    
+    </div>
+    <div class="mb-3">
+      <label for="productIsActive" class="form-label">Is Active</label>
+      <input type="checkbox" class="form-check-input" id="productIsActive" [(ngModel)]="product.isActive" name="productIsActive" />
+    </div>
+    <button type="button" class="btn btn-primary me-2" (click)="onSave(product)">Save</button>
+  </form>
+</div>
+
+
+<ng-template #noSelection>
+  <p class="p-3">No product selected. Please select a product to edit or add a new product.</p>
+</ng-template>
