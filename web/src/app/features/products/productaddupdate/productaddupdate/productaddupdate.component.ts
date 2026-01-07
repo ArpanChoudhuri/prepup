@@ -20,7 +20,7 @@ export class ProductaddupdateComponent  {
 
 
   onSave(product:ProductUpdatemodel) {
-    if (this.product) {
+    if (product?.productId) {
       // Update existing product  
       this.productService.putProducts(product).subscribe({
         next: updatedProduct => {

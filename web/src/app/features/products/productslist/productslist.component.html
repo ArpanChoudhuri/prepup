@@ -8,12 +8,15 @@
                 <p>{{ product.name }}</p>
                 <p>{{ product.isActive }}</p>
                 <p>Price: ${{ product.price}}</p>
-                <button type="button" (click)="onAddNew(product)">
-                    Add
+                <button type="button" (click)="onEditNew(product)">
+                    Edit
                 </button>
             </li>   
         </ul>
       </div>
+      <button type="button" (click)="onEditNew(null)" *ngIf="!showAddUpdateForm">
+        Add
+      </button>
       <ng-template #noResults><p>No products available.</p></ng-template>
     </ng-container>
 </div>

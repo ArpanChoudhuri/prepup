@@ -16,7 +16,7 @@ export class ProductService {
     return this.http.get<Productmodel>(`https://localhost:44321/Products/${id}`);
   }
   postProducts(product: Productmodel) {
-    return this.http.post<Productmodel>('https://localhost:44321/Products', product);
+    return this.http.post<Productmodel>('https://localhost:44321/api/Products', product);
   }
 
   putProducts(product: ProductUpdatemodel) {

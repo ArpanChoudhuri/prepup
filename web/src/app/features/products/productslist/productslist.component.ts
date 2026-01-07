@@ -39,9 +39,9 @@ export class ProductslistComponent implements OnInit {
   constructor(private productService: ProductService) {}
   selectedProduct: ProductUpdatemodel | null = null;
   
-   onAddNew(product: Productmodel | null) {
+   onEditNew(product: Productmodel | null) {
     this.showAddUpdateForm = true;
-    if (product) {
+    if (product?.id) {
       this.selectedProduct = {
         productId: product.id,
         name: product.name,
